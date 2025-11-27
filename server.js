@@ -1,6 +1,7 @@
 const connectDB = require('./db');
 const authRoutes = require('./routes/auth.routes');
 const profileRoutes = require('./routes/profile.routes');
+const chatRoutes = require('./routes/chat.routes');
 require('dotenv').config(); 
 
 const express = require('express');
@@ -14,6 +15,7 @@ app.use(cors());
 
 app.use('/api', authRoutes); 
 app.use('/api', profileRoutes);
+app.use('/api/chats', chatRoutes);
 
 
 app.get('/', (req, res) => {
