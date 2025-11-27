@@ -1,3 +1,9 @@
+const express = require('express');
+const router = express.Router(); // <--- SOLUCIÓN: La inicialización de router faltaba o estaba mal ubicada
+const protect = require('../middleware/auth'); // Tu middleware de protección
+const Message = require('../models/Message'); // Asegúrate de que el modelo 'Message' esté importado
+const User = require('../models/User'); // Necesario para la lógica de chats
+
 // ===============================================
 // 1. OBTENER LA LISTA DE CHATS DEL USUARIO (GET /api/chats)
 //    Esta es la ruta que llama ChatList.jsx
@@ -34,9 +40,48 @@ router.get('/', protect, async (req, res) => {
     }
 });
 
+// ===============================================
+// 2. CREAR UN NUEVO CHAT (POST /api/chats)
+//    Esta es la ruta para iniciar una conversación con otro usuario.
+// ===============================================
+router.post('/', protect, async (req, res) => {
+    // Aquí, el Front-end enviará el ID del usuario con el que se quiere chatear.
+    const { partnerId } = req.body;
+    const currentUserId = req.user.id;
+
+    if (!partnerId) {
+        return res.status(400).json({ msg: 'Debe especificar el ID del usuario para iniciar el chat.' });
+    }
+
+    // 💡 LÓGICA DUMMY DE CREACIÓN DE CHAT (Reemplazar con lógica de DB real)
+    try {
+        // En una aplicación real:
+        // 1. Verificar si el partnerId existe en la colección User.
+        // 2. Verificar si ya existe un chat entre currentUserId y partnerId.
+        // 3. Si no existe, crear un nuevo documento 'Chat' con ambos IDs en 'participants'.
+
+        // Simulación de éxito
+        const newDummyChat = {
+            _id: `chat_${Date.now()}`,
+            participants: [currentUserId, partnerId],
+            name: `Chat con ${partnerId}`,
+            lastMessage: "¡Chat creado!"
+        };
+
+        res.status(201).json({
+            msg: 'Chat creado con éxito (Simulado).',
+            chat: newDummyChat
+        });
+
+    } catch (err) {
+        console.error('Error al crear el chat:', err.message);
+        res.status(500).send('Error del servidor al crear el chat.');
+    }
+});
+
 
 // ===============================================
-// 2. ENVIAR UN MENSAJE A UN CHAT (POST /api/chats/:chatId/messages)
+// 3. ENVIAR UN MENSAJE A UN CHAT (POST /api/chats/:chatId/messages)
 // ===============================================
 router.post('/:chatId/messages', protect, async (req, res) => {
     const { chatId } = req.params;
@@ -69,7 +114,7 @@ router.post('/:chatId/messages', protect, async (req, res) => {
 
 
 // ===============================================
-// 3. OBTENER LOS MENSAJES DE UN CHAT ESPECÍFICO (GET /api/chats/:chatId/messages)
+// 4. OBTENER LOS MENSAJES DE UN CHAT ESPECÍFICO (GET /api/chats/:chatId/messages)
 // ===============================================
 router.get('/:chatId/messages', protect, async (req, res) => {
     const { chatId } = req.params;
@@ -87,7 +132,7 @@ router.get('/:chatId/messages', protect, async (req, res) => {
 
 
 // ===============================================
-// 4. ELIMINAR UN MENSAJE ESPECÍFICO (DELETE /api/chats/:chatId/messages/:messageId)
+// 5. ELIMINAR UN MENSAJE ESPECÍFICO (DELETE /api/chats/:chatId/messages/:messageId)
 // ===============================================
 router.delete('/:chatId/messages/:messageId', protect, async (req, res) => {
     const { messageId } = req.params;
