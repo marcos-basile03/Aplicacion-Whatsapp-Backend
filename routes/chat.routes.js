@@ -1,40 +1,64 @@
-const express = require('express');
-const router = express.Router();
-const protect = require('../middleware/auth'); // Tu middleware de protección
-const Message = require('../models/Message'); // Asegúrate de que el modelo 'Message' esté importado
+// ===============================================
+// 1. OBTENER LA LISTA DE CHATS DEL USUARIO (GET /api/chats)
+//    Esta es la ruta que llama ChatList.jsx
+// ===============================================
+router.get('/', protect, async (req, res) => {
+    // 💡 NOTA: En una app real, aquí buscarías documentos de 'Chat' que 
+    // contengan req.user.id en su lista de participantes (participants).
+    // Como no tenemos un modelo 'Chat', devolvemos una lista de DUMMY chats 
+    // para que el Front-end cargue. Debes reemplazar esto con tu lógica de DB.
 
-// NOTA IMPORTANTE sobre el middleware: 
-// Como tu middleware usa req.user.id, asumiremos que tu payload JWT es: { user: { id: ... } }
+    try {
+        // Lógica de ejemplo (reemplaza con tu lógica de chats reales)
+        const dummyChats = [
+            {
+                _id: "chat_001",
+                participants: [req.user.id, "user_002"],
+                name: "Amigo de Prueba",
+                lastMessage: "¡Hola! Estoy esperando que me implementes."
+            },
+            {
+                _id: "chat_002",
+                participants: [req.user.id, "user_003"],
+                name: "Soporte",
+                lastMessage: "Tu implementación es correcta."
+            }
+        ];
 
-// @route POST /api/chats/:chatId/messages
-// @desc Enviar un nuevo mensaje (Ruta Protegida)
+        // El Front-end espera la respuesta como: { chats: [...] }
+        res.json({ chats: dummyChats });
+
+    } catch (err) {
+        console.error('Error al obtener la lista de chats:', err.message);
+        res.status(500).json({ msg: 'Error del servidor al obtener chats.' });
+    }
+});
+
+
+// ===============================================
+// 2. ENVIAR UN MENSAJE A UN CHAT (POST /api/chats/:chatId/messages)
+// ===============================================
 router.post('/:chatId/messages', protect, async (req, res) => {
-    // 'protect' se ejecutó. Si llegó aquí, el token es válido y req.user está adjunto.
-    const { chatId } = req.params; // El ID del jugador con el que estás chateando
-    const { content } = req.body; // El texto del mensaje
-    
-    // Usamos req.user.id del payload del JWT para saber quién envía el mensaje.
-    const senderId = req.user.id; 
+    const { chatId } = req.params;
+    const { content } = req.body;
+    const senderId = req.user.id;
 
     try {
         if (!content || content.trim() === '') {
             return res.status(400).json({ msg: 'El contenido del mensaje no puede estar vacío.' });
         }
 
-        // 1. Crear el nuevo documento de mensaje
         const newMessage = new Message({
             chatId,
-            sender: senderId, 
+            sender: senderId,
             content,
         });
 
-        // 2. Guardar en MongoDB
         const savedMessage = await newMessage.save();
 
-        // 3. Respuesta que el Frontend espera
         res.status(201).json({
             msg: 'Mensaje enviado y guardado con éxito.',
-            message: savedMessage // Devolvemos el mensaje guardado (con su _id y timestamp real)
+            message: savedMessage
         });
 
     } catch (err) {
@@ -44,8 +68,9 @@ router.post('/:chatId/messages', protect, async (req, res) => {
 });
 
 
-// @route GET /api/chats/:chatId/messages
-// @desc Obtener todos los mensajes de un chat (Ruta Protegida)
+// ===============================================
+// 3. OBTENER LOS MENSAJES DE UN CHAT ESPECÍFICO (GET /api/chats/:chatId/messages)
+// ===============================================
 router.get('/:chatId/messages', protect, async (req, res) => {
     const { chatId } = req.params;
 
@@ -61,17 +86,17 @@ router.get('/:chatId/messages', protect, async (req, res) => {
 });
 
 
-// @route DELETE /api/chats/:chatId/messages/:messageId
-// @desc Eliminar un mensaje específico (Ruta Protegida)
+// ===============================================
+// 4. ELIMINAR UN MENSAJE ESPECÍFICO (DELETE /api/chats/:chatId/messages/:messageId)
+// ===============================================
 router.delete('/:chatId/messages/:messageId', protect, async (req, res) => {
     const { messageId } = req.params;
-    const userId = req.user.id; // ID del usuario autenticado (emisor)
+    const userId = req.user.id;
 
     try {
-        // 1. Encontrar y eliminar el mensaje. IMPORTANTE: Solo permitir eliminar si el sender coincide
-        const message = await Message.findOneAndDelete({ 
-            _id: messageId, 
-            sender: userId // Solo el propietario puede eliminarlo
+        const message = await Message.findOneAndDelete({
+            _id: messageId,
+            sender: userId
         });
 
         if (!message) {
