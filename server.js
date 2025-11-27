@@ -8,8 +8,9 @@ const app = express();
 
 connectDB();
 
-app.use(express.json()); 
-
+app.use(express.json());
+const cors = require('cors'); 
+app.use(cors());
 
 app.use('/api', authRoutes); 
 app.use('/api', profileRoutes);
